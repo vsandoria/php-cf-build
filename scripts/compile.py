@@ -16,7 +16,7 @@
 # limitations under the License.
 from datetime import datetime
 from build_pack_utils import Builder
-from compile_helpers import setup_webdir_if_it_doesnt_exist
+from compile_helpers import setup_htdocs_if_it_doesnt_exist
 
 
 if __name__ == '__main__':
@@ -26,20 +26,19 @@ if __name__ == '__main__':
             .user_config()
             .done()
         .execute()
-            .method(setup_webdir_if_it_doesnt_exist)
-        .register()
-            .extension()
-                .from_build_pack('lib/{WEB_SERVER}')
-            .extension()
-                .from_build_pack('lib/{PHP_VM}')
-            .extensions()
-                .from_build_pack('extensions')
-            .extensions()
-                .from_application('.extensions')
-            .done()
+            .method(setup_htdocs_if_it_doesnt_exist)
         .install()
             .build_pack_utils()
+            .extension()
+                .from_build_pack('lib/{WEB_SERVER}')
+                .done()
+            .extension()
+                .from_build_pack('lib/{PHP_VM}')
+                .done()
             .extensions()
+                .from_build_pack('extensions')
+                .from_application('.extensions')
+                .done()
             .done()
         .copy()
             .under('{BP_DIR}/bin')

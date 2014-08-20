@@ -66,7 +66,6 @@ class Detecter(object):
         self._fullPath = False
         self._continue = False
         self._output = 'Found'
-        self._ctx = builder._ctx
         self._root = builder._ctx['BUILD_DIR']
 
     def _config(self, detecter):
@@ -75,27 +74,22 @@ class Detecter(object):
         return detecter
 
     def with_regex(self, regex):
-        regex = self._ctx.format(regex)
         self._detecter = self._config(RegexFileSearch(regex))
         return self
 
     def by_name(self, name):
-        name = self._ctx.format(name)
         self._detecter = self._config(TextFileSearch(name))
         return self
 
     def starts_with(self, text):
-        text = self._ctx.format(text)
         self._detecter = self._config(StartsWithFileSearch(text))
         return self
 
     def ends_with(self, text):
-        text = self._ctx.format(text)
         self._detecter = self._config(EndsWithFileSearch(text))
         return self
 
     def contains(self, text):
-        text = self._ctx.format(text)
         self._detecter = self._config(ContainsFileSearch(text))
         return self
 
@@ -112,7 +106,7 @@ class Detecter(object):
         return self
 
     def if_found_output(self, text):
-        self._output = self._ctx.format(text)
+        self._output = text
         return self
 
     def when_not_found_continue(self):
@@ -120,12 +114,12 @@ class Detecter(object):
         return self
 
     def under(self, root):
-        self._root = self._ctx.format(root)
+        self._root = root
         self.recursive()
         return self
 
     def at(self, root):
-        self._root = self._ctx.format(root)
+        self._root = root
         return self
 
     def done(self):
@@ -168,17 +162,11 @@ class Installer(object):
     def config(self):
         return ConfigInstaller(self)
 
-    def extensions(self):
-        ctx = self.builder._ctx
-        extn_reg = self.builder._extn_reg
+    def extension(self):
+        return ExtensionInstaller(self)
 
-        def process(retcode):
-            if retcode != 0:
-                raise RuntimeError('Extension Failed with [%s]' % retcode)
-        for path in extn_reg._paths:
-            process_extension(path, ctx, 'compile', process, args=[self])
-        ctx['EXTENSIONS'].extend(extn_reg._paths)
-        return self
+    def extensions(self):
+        return ExtensionInstaller(self)
 
     def build_pack_utils(self):
         self._log.info("Installed build pack utils.")
@@ -193,25 +181,6 @@ class Installer(object):
 
     def done(self):
         return self.builder
-
-
-class Register(object):
-    def __init__(self, builder):
-        self._builder = builder
-        self._builder._extn_reg = ExtensionRegister(builder, self)
-
-    def extension(self):
-        return self._builder._extn_reg
-
-    def extensions(self):
-        return self._builder._extn_reg
-
-    def done(self):
-        def process(resp):
-            pass  # ignore result, don't care
-        for extn in self._builder._extn_reg._paths:
-            process_extension(extn, self._builder._ctx, 'configure', process)
-        return self._builder
 
 
 class ModuleInstaller(object):
@@ -297,18 +266,21 @@ class ModuleInstaller(object):
         return self._installer
 
 
-class ExtensionRegister(object):
-    def __init__(self, builder, reg):
-        self._builder = builder
-        self._ctx = builder._ctx
+class ExtensionInstaller(object):
+    def __init__(self, installer):
+        self._installer = installer
+        self._ctx = installer.builder._ctx
         self._paths = []
-        self._reg = reg
+        self._ignore = True
+        self._log = _log
 
     def from_build_pack(self, path):
-        return self.from_path(os.path.join(self._ctx['BP_DIR'], path))
+        self.from_path(os.path.join(self._ctx['BP_DIR'], path))
+        return self
 
     def from_application(self, path):
-        return self.from_path(os.path.join(self._ctx['BUILD_DIR'], path))
+        self.from_path(os.path.join(self._ctx['BUILD_DIR'], path))
+        return self
 
     def from_path(self, path):
         path = self._ctx.format(path)
@@ -318,7 +290,21 @@ class ExtensionRegister(object):
             else:
                 for p in os.listdir(path):
                     self._paths.append(os.path.abspath(os.path.join(path, p)))
-        return self._reg
+        return self
+
+    def ignore_errors(self, ignore):
+        self._ignore = ignore
+        return self
+
+    def done(self):
+        def process(retcode):
+            if retcode != 0:
+                raise RuntimeError('Extension Failed with [%s]' % retcode)
+        for path in self._paths:
+            process_extension(path, self._ctx, 'compile', process,
+                              args=[self._installer])
+        self._ctx['EXTENSIONS'].extend(self._paths)
+        return self._installer
 
 
 class ConfigInstaller(object):
@@ -556,8 +542,8 @@ class FileUtil(object):
             self._from_path = self._builder._ctx[path]
         else:
             self._from_path = self._builder._ctx.format(path)
-        if not self._from_path.startswith('/'):
-            self._from_path = os.path.join(os.getcwd(), self._from_path)
+            if not self._from_path.startswith('/'):
+                self._from_path = os.path.join(os.getcwd(), path)
         return self
 
     def into(self, path):
@@ -565,8 +551,8 @@ class FileUtil(object):
             self._into_path = self._builder._ctx[path]
         else:
             self._into_path = self._builder._ctx.format(path)
-        if not self._into_path.startswith('/'):
-            self._into_path = os.path.join(self._from_path, self._into_path)
+            if not self._into_path.startswith('/'):
+                self._into_path = os.path.join(self._from_path, path)
         return self
 
     def _copy_or_move(self, src, dest):
@@ -864,9 +850,6 @@ class Builder(object):
 
     def install(self):
         return Installer(self)
-
-    def register(self):
-        return Register(self)
 
     def run(self):
         return Runner(self)
