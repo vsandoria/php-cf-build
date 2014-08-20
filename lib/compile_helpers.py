@@ -14,7 +14,9 @@
 # limitations under the License.
 import os
 import os.path
+import json
 import logging
+from collections import defaultdict
 from build_pack_utils import FileUtil
 
 
@@ -32,13 +34,13 @@ class FakeInstaller(object):
         self.builder = builder
 
 
-def setup_htdocs_if_it_doesnt_exist(ctx):
+def setup_webdir_if_it_doesnt_exist(ctx):
     if is_web_app(ctx):
-        htdocsPath = os.path.join(ctx['BUILD_DIR'], 'htdocs')
-        if not os.path.exists(htdocsPath):
+        webdirPath = os.path.join(ctx['BUILD_DIR'], ctx['WEBDIR'])
+        if not os.path.exists(webdirPath):
             fu = FileUtil(FakeBuilder(ctx), move=True)
             fu.under('BUILD_DIR')
-            fu.into('htdocs')
+            fu.into('WEBDIR')
             fu.where_name_does_not_match(
                 '^%s.*$' % os.path.join(ctx['BUILD_DIR'], '.bp'))
             fu.where_name_does_not_match(
@@ -48,8 +50,52 @@ def setup_htdocs_if_it_doesnt_exist(ctx):
             fu.where_name_does_not_match(
                 '^%s.*$' % os.path.join(ctx['BUILD_DIR'], 'manifest.yml'))
             fu.where_name_does_not_match(
-                '^%s.*$' % os.path.join(ctx['BUILD_DIR'], 'lib'))
+                '^%s.*$' % os.path.join(ctx['BUILD_DIR'], ctx['LIBDIR']))
             fu.done()
+
+
+def load_binary_index(ctx):
+    index_path = os.path.join(ctx['BP_DIR'], 'binaries',
+                              ctx['STACK'], 'index-all.json')
+    return json.load(open(index_path))
+
+
+def find_all_php_versions(index_json):
+    return index_json['php'].keys()
+
+
+def find_all_php_extensions(index_json):
+    SKIP = ('cli', 'pear', 'cgi', 'fpm')
+    exts = defaultdict(list)
+    for version, files in index_json['php'].iteritems():
+        for f in files:
+            if f.endswith('.tar.gz'):
+                tmp = f.split('-')
+                if len(tmp) == 3 and tmp[1] not in SKIP:
+                    exts[version].append(tmp[1])
+    return exts
+
+
+def validate_php_version(ctx):
+    if ctx['PHP_VERSION'] in ctx['ALL_PHP_VERSIONS']:
+        _log.debug('App selected PHP [%s]', ctx['PHP_VERSION'])
+    else:
+        _log.warning('Selected version of PHP [%s] not available.  Defaulting'
+                     ' to the latest version [%s]',
+                     ctx['PHP_VERSION'], ctx['PHP_54_LATEST'])
+        ctx['PHP_VERSION'] = ctx['PHP_54_LATEST']
+
+
+def validate_php_extensions(ctx):
+    extns = ctx['ALL_PHP_EXTENSIONS'][ctx['PHP_VERSION']]
+    keep = []
+    for extn in ctx['PHP_EXTENSIONS']:
+        if extn in extns:
+            _log.debug('Extension [%s] validated.', extn)
+            keep.append(extn)
+        else:
+            _log.warn('Extension [%s] is not available!', extn)
+    ctx['PHP_EXTENSIONS'] = keep
 
 
 def convert_php_extensions(ctx):

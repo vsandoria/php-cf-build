@@ -45,6 +45,7 @@ While the *30 Second Tutorial* shows how quick and easy it is to get started usi
   - [Example Applications](#examples)
   - [Usage]
   - [Configuration Options]
+  - [Composer]
   - [Binaries]
   - [Troubleshooting]
   - [Getting Help](#getting-help)
@@ -73,13 +74,15 @@ Here's a list of the major features of the build pack.
 
   - supports the latest versions of Apache HTTPD 2.4 and Nginx 1.5, 1.6 & 1.7
   - supports the latest versions of PHP 5.4 and 5.5
-  - supports a large set of PHP extensions, including amqp, apc, bz2, curl, dba, gd, gettext, gmp, igbinary, imap, ldap, mcrypt, memcache, memcached, mongo, msgpack, openssl, pdo_pgsql, pgsql, phalcon, pspell, redis, snmp, xdebug and zlib
+  - supports a large set of PHP extensions, including amqp, apc, bz2, curl, dba, gd, gettext, gmp, igbinary, imap, intl, ldap, mcrypt, memcache, memcached, mongo, msgpack, opcache, openssl, pdo_pgsql, pgsql, phalcon, pspell, redis, snmp, xdebug and zlib
   - allows installing PHP runtime of choice: php cli, php cgi or php-fpm
   - versions of HTTPD, Nginx and PHP are automatically upgraded to the latest release just by re-staging an application
   - allows for application developers to control which PHP extensions are installed
   - allows for application developers to custom configure HTTPD, Nginx or PHP
   - supports running stand alone PHP scripts
+  - supports running applications that use [Composer]
   - download location is configurable, allowing users to host binaries on the same network (i.e. run without an Internet connection)
+  - supports running in ["offline" mode] where binaries are bundled with the build pack
   - supports an extension mechanism that allows the build pack to provided additional functionality
   - allows for application developers to provide custom extensions
   - support NewRelic through an extension
@@ -96,6 +99,7 @@ Here are some example applications that can be used with this build pack.
   - [Wordpress]  A deployment of Wordpress that uses bound MySQL service
   - [CodeIgniter]  CodeIgniter tutorial application running on CF
   - [Stand Alone]  An example which runs a stand alone PHP script
+  - [pgbouncer]  An example which runs the pgbouncer process in the container to pool db connections.
 
 ## Getting Help
 
@@ -142,6 +146,9 @@ The CloudFoundry PHP Build Pack is released under version 2.0 of the [Apache Lic
 [Wordpress]:https://github.com/dmikusa-pivotal/cf-ex-worpress
 [CodeIgniter]:https://github.com/dmikusa-pivotal/cf-ex-code-igniter
 [Stand Alone]:https://github.com/dmikusa-pivotal/cf-ex-stand-alone
+[pgbouncer]:https://github.com/dmikusa-pivotal/cf-ex-pgbouncer
 [Apache License]:http://www.apache.org/licenses/LICENSE-2.0
 [vcap-dev]:https://groups.google.com/a/cloudfoundry.org/forum/#!forum/vcap-dev
 [support forums]:http://support.run.pivotal.io/home
+[Composer]:https://github.com/dmikusa-pivotal/cf-php-build-pack/blob/master/docs/composer.md
+["offline" mode]:https://github.com/dmikusa-pivotal/cf-php-build-pack/blob/master/docs/binaries.md#bundling-binaries-with-the-build-pack
