@@ -31,6 +31,6 @@
     "PHP_MODULES_PATTERN": "{DOWNLOAD_URL}/php/{PHP_VERSION}/php-{MODULE_NAME}-{PHP_VERSION}.tar.gz",
     "PHP_MODULES_STRIP": "true",
     "PHP_MODULES": [],
-    "PHP_EXTENSIONS": [ "bz2", "zlib", "curl", "mcrypt"],
+    "PHP_EXTENSIONS": [ "amqp", "apc", "bz2", "curl", "dba", "gd", "gettext", "gmp", "imap", "ldap", "mcrypt", "mongo", "openssl", "pdo_pgsql", "pgsql", "pspell", "redis", "xdebug","zlib"],
     "ZEND_EXTENSIONS": []
 }
